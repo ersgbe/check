@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lock In</title>
+<style>
+:root{color-scheme:dark;--bg:#0a0a0b;--c:#141415;--c2:#1b1b1d;--b:#262628;--t:#ededed;--m:#8b8b90;--g:#f5f5f5;--o:#f5f5f5;--r:#ef4444}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--t);font:14px/1.35 Inter,"Segoe UI",system-ui,sans-serif}
+.app{height:100%;padding:12px;display:grid;grid-template-rows:auto 38fr 62fr;gap:10px}
+header{display:flex;justify-content:space-between;align-items:baseline;padding:0 4px}
+h1{font-size:20px;font-weight:600}
+.sub{color:var(--m);font-size:12px}
+.top{display:grid;grid-template-columns:1fr 330px;gap:10px;min-height:0}
+.bot{display:grid;grid-template-columns:1fr 330px;gap:10px;min-height:0}
+.card{background:var(--c);border:1px solid var(--b);border-radius:14px;padding:14px;min-height:0;overflow:hidden}
+.dl{display:grid;grid-template-columns:1fr 1fr 56px;padding:0;gap:0}
+.col{padding:14px;border-right:1px solid var(--b);display:flex;flex-direction:column;min-height:0}
+.col .lbl{display:flex;justify-content:space-between;align-items:center;color:var(--m);font-size:13px}
+.badge{padding:3px 10px;border-radius:99px;background:#26262a;color:var(--t);font-size:12px;font-variant-numeric:tabular-nums}
+.badge.late{background:#f5f5f5;color:#0a0a0b}
+.big{font-size:38px;font-weight:600;letter-spacing:-.03em;margin:8px 0 6px}
+.big small{font-size:12px;color:var(--m);font-weight:400;letter-spacing:0;margin-left:6px}
+.bar{height:5px;border-radius:9px;background:#2a2a2d;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--g);transition:width .4s}
+.nums{display:flex;justify-content:space-between;color:var(--m);font-size:12px;margin-top:7px;font-variant-numeric:tabular-nums}
+.nums b{color:var(--t);font-weight:500}
+.chips{margin-top:auto;display:flex;gap:6px;flex-wrap:wrap}
+.chip{padding:4px 10px;border-radius:99px;background:#232326;font-size:12px}
+.pm{display:grid;grid-template-rows:1fr 1fr}
+.pm button{background:none;border:0;border-bottom:1px solid var(--b);color:var(--t);font-size:24px;cursor:pointer}
+.pm button:last-child{border:0}
+.pm button:hover{background:var(--c2)}
+h2{font-size:14px;font-weight:600;margin-bottom:8px}
+.row{display:flex;align-items:center;gap:9px;padding:6px 9px;border:1px solid var(--b);background:var(--c2);border-radius:10px;margin-bottom:6px}
+.row .tx{flex:1;outline:0;min-width:0}
+.tx::first-letter{text-transform:uppercase}
+.row.done .tx{color:var(--m);text-decoration:line-through}
+.cb{width:16px;height:16px;border-radius:50%;border:2px solid var(--o);background:none;cursor:pointer;flex:none}
+.row.done .cb{background:var(--g);border-color:var(--g)}
+.x{background:none;border:0;color:var(--m);cursor:pointer;font-size:16px;opacity:0}
+.row:hover .x{opacity:1}
+.add{width:100%;background:none;border:1px dashed #3a3a3e;border-radius:10px;padding:6px 10px;color:var(--t);font:inherit;outline:0}
+.add:focus{border-color:var(--m)}
+.lock{background:#050505;display:flex;flex-direction:column}
+.lock .h{font-size:clamp(30px,5.5vh,50px);line-height:.95;font-weight:600;letter-spacing:-.03em}
+.lock .d{margin-top:auto;display:flex;justify-content:space-between;align-items:baseline;color:var(--m)}
+.lock .d b{font-size:34px;color:var(--t);font-weight:600}
+.lock .bar{margin:8px 0 6px}
+.main{display:grid;grid-template-columns:1fr 1fr 1.25fr;gap:16px}
+.pane{display:flex;flex-direction:column;min-height:0}
+.list{overflow:auto;scrollbar-width:none;flex:1;min-height:0}
+.list::-webkit-scrollbar{display:none}
+.dirs{display:flex;flex-direction:column;gap:2px}
+.dir{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:9px 12px;border:1px solid var(--b);background:var(--c2);border-radius:10px;margin-bottom:6px;cursor:pointer;font-size:20px;font-weight:500;letter-spacing:-.01em;color:var(--t)}
+.dir.open{color:var(--t)}
+.dir span{font-size:12px;color:var(--m)}
+.sep{font-size:11px;color:var(--m);margin:6px 0 0}
+.panel{margin:8px 0}
+.rem{background:#1b1b1d;border:1px solid #333337;color:#d4d4d8;border-radius:10px;padding:8px 10px;margin-bottom:8px;font-size:12.5px}
+dialog{margin:auto;background:var(--c);color:var(--t);border:1px solid var(--b);border-radius:14px;padding:18px;width:300px}
+dialog::backdrop{background:#000a}
+dialog input{width:100%;margin:10px 0;padding:10px;background:var(--c2);border:1px solid var(--b);border-radius:10px;color:var(--t);font-size:18px}
+dialog button{padding:8px 14px;border-radius:99px;border:1px solid var(--b);background:var(--c2);color:var(--t);cursor:pointer;margin-right:6px}
+</style>
+</head>
+<body>
+<div class="app">
+  <header><h1 id="date"></h1><span class="sub">Сохраняется только в этом браузере</span></header>
+  <div class="top">
+    <div class="card dl" id="dl"></div>
+    <div class="card"><h2>Цели</h2><div id="goals"></div></div>
+  </div>
+  <div class="bot">
+    <div class="card main">
+      <div class="pane"><h2 id="h-daily">Ежедневные</h2><div class="list" id="daily"></div></div>
+      <div class="pane"><h2 id="h-day">Дела на день</h2><div class="list" id="day"></div></div>
+      <div class="pane"><h2>Сейчас в работе</h2><div class="list" id="dirs"></div></div>
+    </div>
+    <div class="card lock">
+      <div class="h">LOCK IN<br>FOR 6<br>MONTH</div>
+      <div class="d"><span>день</span><span><b id="ld">1</b> / 181</span></div>
+      <div class="bar"><i id="lb"></i></div>
+      <div class="d"><span>с 3 ноября</span><span>до 3 мая 2027</span></div>
+    </div>
+  </div>
+</div>
+<dialog id="dlg"><div id="dt"></div><input id="di" type="number" inputmode="numeric" placeholder="Сумма, ₽"><button id="ok">Готово</button><button id="no">Отмена</button></dialog>
+<script>
+const KEY="lockin-v1";
+const DIRS=[
+ {id:"sites",n:"Сайты",main:1,rem:"Разбираю ошибки и предлагаю улучшить + сделать сайт + решение с поиском клиентов и закрытие боли. Просто вести диалог, как клиент. Думать, как решать проблемы, о которых они думают утром — прям так и заходить. Чек 5–10–20–30к."},
+ {id:"arb",n:"Арбитраж трафика",main:1,rem:"На траф первым делом ищу клиентов."},
+ {id:"p2p",n:"p2p"},{id:"tink",n:"темка с картой тинька"},{id:"mama",n:"сайты мама"}];
+const D1={name:"До 15 ноября, 18:00",at:new Date(2026,10,15,18,0),goal:60000,chips:["Квартира 40к","Жизнь 5к","Клод 2к","Зал 6к"]};
+const D2={name:"До 30 ноября, 18:00",at:new Date(2026,10,30,18,0),goal:500000,chips:[],note:"любыми способами"};
+let id=0;const mk=(g,t)=>({id:"i"+Date.now()+(id++),g,t});
+const def=()=>({earned:0,checks:{},goals:[{id:"g1",t:"Заработать 500к"},{id:"g2",t:"Переехать в ахуенную квартиру"},{id:"g3",t:"Набрать 10 кг"}],
+ items:[...["Растяжка","Шея","Стояк","Мысли"].map(t=>mk("daily",t)),...["Евгений получить заказа","Кредиты отписать"].map(t=>mk("day",t))]});
+let S;try{S=JSON.parse(localStorage.getItem(KEY))||def()}catch(e){S=def()}
+S.items=S.items.filter(i=>!["порно","бюджет посчитать"].includes(i.t.trim().toLowerCase())&&!(i.g==="day"&&["p2p"].includes(i.t.trim().toLowerCase())));
+if(!S.mig1){S.mig1=1;["темка с картой тинька"].forEach(t=>S.items.push({id:"m"+t.length+Math.random().toString(36).slice(2,7),g:"day",t}))}
+if(!S.mig2){S.mig2=1;S.items.unshift({id:"m2"+Math.random().toString(36).slice(2,7),g:"daily",t:"Утром"})}
+if(!S.mig3){S.mig3=1;if(!S.items.some(i=>i.g==="day"&&i.t.trim().toLowerCase()==="сайты мама"))S.items.push({id:"m3"+Math.random().toString(36).slice(2,7),g:"day",t:"сайты мама"})}
+S.items=S.items.filter(i=>!(i.g==="daily"&&i.t.trim().toLowerCase()==="утром")&&!(i.g==="day"&&["темка с картой тинька","p2p"].includes(i.t.trim().toLowerCase())));
+S.items=S.items.filter(i=>!(i.g==="think"&&["темка с картой тинька","p2p"].includes(i.t.trim().toLowerCase())));
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const $=s=>document.querySelector(s);
+const esc=s=>s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const today=()=>{const d=new Date();return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate()};
+const chk=i=>!!(S.checks[today()]||{})[i];
+const rub=n=>Math.round(n).toLocaleString("ru-RU")+" ₽";
+const kf=n=>n>=1000?(n/1000)+"к":n;
+let openDir="sites";
+
+function rows(g){return S.items.filter(i=>i.g===g).map(i=>`<div class="row ${chk(i.id)?"done":""}"><button class="cb" data-a="tog" data-id="${i.id}"></button><span class="tx" contenteditable="true" spellcheck="false" data-id="${i.id}">${esc(i.t)}</span><button class="x" data-a="del" data-id="${i.id}">×</button></div>`).join("")}
+const addBox=(g,ph)=>`<input class="add" data-g="${g}" placeholder="${ph}">`;
+const cnt=g=>{const a=S.items.filter(i=>i.g===g);return a.filter(i=>chk(i.id)).length+"/"+a.length};
+
+function render(){
+  $("#date").textContent=new Date().toLocaleDateString("ru-RU",{weekday:"long",day:"numeric",month:"long"}).replace(/^./,c=>c.toUpperCase());
+  $("#h-daily").textContent="Ежедневные · Утром · "+cnt("daily");
+  $("#h-day").textContent="Дела на день · "+cnt("day");
+  $("#daily").innerHTML=rows("daily");
+  $("#day").innerHTML=rows("day")+addBox("day","Новое дело");
+  const dl=d=>DIRS.map(x=>{
+    const o=x.id===openDir;
+    return `<div class="dir ${x.main?"":"sec"} ${o?"open":""}" data-a="dir" data-id="${x.id}">${esc(x.n)} <span>${o?"▾":"▸"}</span></div>`+
+    (o?`<div class="panel">${x.rem?`<div class="rem">${esc(x.rem)}</div>`:""}${rows(x.id)}</div>`:"")}).join("");
+  const m=DIRS.filter(x=>x.main),s=DIRS.filter(x=>!x.main);
+  const part=a=>a.map(x=>{const o=x.id===openDir;return `<div class="dir ${x.main?"":"sec"} ${o?"open":""}" data-a="dir" data-id="${x.id}">${esc(x.n)} <span>${o?"▾":"▸"}</span></div>`+(o?`<div class="panel">${x.rem?`<div class="rem">${esc(x.rem)}</div>`:""}${rows(x.id)}</div>`:"")}).join("");
+  $("#dirs").innerHTML=part(m);
+
+  $("#goals").innerHTML=["Заработать 500к","Переехать в ахуенную квартиру","Набрать 10 кг"].map(t=>`<div class="row" style="padding:11px 12px;font-size:15px;font-weight:500;pointer-events:none;user-select:none"><span class="cb" style="display:inline-block;background:var(--o)"></span><span class="tx">${t}</span></div>`).join("");
+  tick();
+}
+function card(d,e){
+  const left=d.at-new Date(),late=left<=0;
+  const mins=Math.max(0,Math.floor(left/6e4)),dd=Math.floor(mins/1440),hh=Math.floor(mins%1440/60),mm=mins%60;
+  const have=Math.min(e,d.goal),pct=Math.max(0,have/d.goal*100);
+  return `<div class="col"><div class="lbl"><span>${d.name}</span><span class="badge ${late?"late":""}">${late?"Срок прошёл":`ещё ${dd?dd+" д ":""}${hh} ч ${mm} мин`}</span></div>
+  <div class="big">${kf(d.goal)}${d.note?`<small>${d.note}</small>`:""}</div><div class="bar"><i style="width:${pct}%"></i></div>
+  <div class="nums"><span><b>${rub(Math.max(0,have))}</b> есть</span><span>осталось <b>${rub(Math.max(0,d.goal-have))}</b></span></div>
+  <div class="chips">${d.chips.map(c=>`<span class="chip">${c}</span>`).join("")}</div></div>`;
+}
+function tick(){
+  $("#dl").innerHTML=card(D1,S.earned)+card(D2,S.earned)+`<div class="pm"><button data-a="plus" title="Добавить доход">+</button><button data-a="minus" title="Убрать">−</button></div>`;
+  const n=new Date(),st=new Date(2026,10,3),dn=Math.min(181,Math.max(1,Math.floor((new Date(n.getFullYear(),n.getMonth(),n.getDate())-st)/864e5)+1));
+  $("#ld").textContent=dn;$("#lb").style.cssText="display:block;height:100%;background:#fff;width:"+dn/181*100+"%";$("#lb").parentNode.style.cssText="height:5px";
+}
+setInterval(()=>{if(!document.activeElement||!document.activeElement.classList.contains("tx"))tick()},15000);
+let lastDay=today();setInterval(()=>{if(today()!==lastDay){lastDay=today();render()}},30000);
+
+let mode=1;const dlg=$("#dlg");
+document.addEventListener("click",e=>{
+  const b=e.target.closest("[data-a]");if(!b)return;const a=b.dataset.a,i=b.dataset.id;
+  if(a==="tog"){const c=S.checks[today()]=S.checks[today()]||{};c[i]=!c[i]}
+  else if(a==="del"){if(!confirm("Удалить задачу?"))return;S.items=S.items.filter(x=>x.id!==i)}
+  else if(a==="dir")openDir=openDir===i?null:i;
+  else if(a==="goal"){const g=S.goals.find(x=>x.id===i);g.done=!g.done}
+  else if(a==="gdel")S.goals=S.goals.filter(x=>x.id!==i);
+  else if(a==="plus"||a==="minus"){mode=a==="plus"?1:-1;$("#dt").textContent=mode>0?"Добавить доход":"Вычесть сумму";$("#di").value="";dlg.showModal();$("#di").focus();return}
+  save();render();
+});
+$("#ok").onclick=()=>{const v=parseFloat($("#di").value);if(v>0){S.earned=Math.max(0,S.earned+mode*v);save();render()}dlg.close()};
+$("#no").onclick=()=>dlg.close();
+$("#di").addEventListener("keydown",e=>{if(e.key==="Enter")$("#ok").click()});
+document.addEventListener("keydown",e=>{
+  const t=e.target;
+  if(t.classList.contains("add")&&e.key==="Enter"&&t.value.trim()){
+    const g=t.dataset.g,v=t.value.trim();
+    if(g==="__goal")S.goals.push({id:"g"+Date.now(),t:v});else S.items.push(mk(g,v));
+    save();render();
+  }else if(t.classList.contains("tx")&&e.key==="Enter"){e.preventDefault();t.blur()}
+});
+document.addEventListener("focusout",e=>{
+  const t=e.target;if(!t.classList||!t.classList.contains("tx"))return;
+  const v=t.textContent.trim();
+  if(t.dataset.gid){const g=S.goals.find(x=>x.id===t.dataset.gid);if(g&&v)g.t=v}
+  else{const it=S.items.find(x=>x.id===t.dataset.id);if(it&&v)it.t=v}
+  save();
+});
+render();
+</script>
+</body>
+</html>
